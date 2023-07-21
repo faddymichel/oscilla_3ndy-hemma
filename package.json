@@ -7,6 +7,6 @@
   "author": "Faddy Michel <faddy.michel@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "shell.scenarist.dev": "^0.1.2"
+    "shell.scenarist.dev": "^0.2.0"
   }
 }

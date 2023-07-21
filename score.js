@@ -27,12 +27,13 @@ t 0 ${ bpm }`;
 
 $_director ( play, ... notation ) {
 
-if ( ! notation .length )
-return [ `i "out" 0 ${ this .time }` ];
-
 const score = this;
 const { oscilla, octave, velocity } = score;
-const note = notation .shift () .split ( '' );
+
+return [
+
+... notation .map ( note => {
+
 let key, duration;
 
 switch ( note .length ) {
@@ -58,7 +59,12 @@ throw '#error Invalid note syntax';
 
 const number = oscilla ( $ ( 'noteNumber' ), key );
 
-return [ score .note ( parseInt ( duration ), number + octave * 12, velocity ), ... play ( ... notation ) ];
+return score .note ( parseInt ( duration ), number + octave * 12, velocity );
+
+} ),
+this .time ? `i "out" 0 ${ this .time }` : undefined
+
+] .join ( '\n' );
 
 }
 

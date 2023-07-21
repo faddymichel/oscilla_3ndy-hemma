@@ -1,0 +1,12 @@
+{
+  "name": "oscilla",
+  "version": "0.0.1",
+  "description": "To Play with Music",
+  "type": "module",
+  "main": "play.js",
+  "author": "Faddy Michel <faddy.michel@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "shell.scenarist.dev": "^0.1.2"
+  }
+}

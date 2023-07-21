@@ -1,0 +1,33 @@
+> design
+
++ oscillator
+
+wave -1
+frequencyAttack 25
+
+on
+
+attack 32
+decay 64
+amplitudeSustain .125
+
+off
+
+attack 8
+decay 1
+amplitudeSustain 0
+frequencyAttack -25
+
+> tuning
+
+maqam hijaz 0 0 -2 0 0 -2 0
+
+keyboard s d f j k l ;
+
+> score
+
+maqam hijaz
+tempo 90
+octave 6
+
+s d f j k l ; ; l k j f d s

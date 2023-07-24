@@ -7,13 +7,15 @@ export default class Design extends Mode {
 $on () { this .status = 144 }
 $off () { this .status = 128 }
 
-[ '$+' ] ( play, type = 'oscillator' ) {
+[ '$+' ] ( play, type = 'oscillator', name ) {
 
 const design = this;
 const { oscilla } = design;
-const instrument = design .instrument = oscilla ( $ ( 'instrument' ) );
+const instrument = design .instrument = oscilla ( $ ( 'instrument' ), name );
 
-return `i ${ instrument } 0 -1 "${ type }" 0 0 0`;
+delete design .status;
+
+return `i ${ instrument .instance } 0 -1 "${ type }" 0 0 0`;
 
 }
 
@@ -29,7 +31,7 @@ if ( parameter === undefined || value === undefined )
 throw "#error #design Neither the parameter nor value can be undefined."
 
 return [ ... status ? [ status ] : [ 144, 128 ] ]
-.map ( status => `i ${ instrument } 0 -1 176 ${ status } "${ parameter }" ${ value }` )
+.map ( status => `i ${ instrument .instance } 0 -1 176 ${ status } "${ parameter }" ${ value }` )
 .join ( '\n' );
 
 }

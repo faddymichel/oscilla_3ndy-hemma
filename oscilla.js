@@ -6,6 +6,14 @@ const $ = Symbol .for;
 
 export default class Oscilla {
 
+constructor () {
+
+this .kit = [];
+this .kit .equipment = new Map;
+
+}
+
+
 setup = {
 
 design: new Design,
@@ -33,11 +41,22 @@ return `s ; #mode ${ mode }`;
 
 }
 
-kit = []
+$_instrument ( play, name ) {
 
-$_instrument () { return this .kit [ this .kit .push ( 13 + ( this .kit .length + 1 ) % 1000000 / 1000000 ) - 1 ] }
+const { kit } = this;
+const instrument = { instance: 13 + ( kit .length + 1 ) % 1000 / 1000 };
+
+kit .push ( instrument );
+
+if ( name ?.length )
+kit .equipment .set ( name, instrument );
+
+return instrument;
+
+}
 
 $_kit () { return this .kit }
+
 keyboard = new Map
 
 get $_keyboardSize () { return this .keyboard .size }

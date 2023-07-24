@@ -37,6 +37,55 @@ xout iFT
 
 endop
 
+opcode oEnvelope, ak, iiiii
+
+iEnvelope, iAttack, iEnvelopeAttack, iDecay, iSustain xin
+
+tigoto Envelope
+
+kEnvelope init 0
+
+Envelope:
+
+if iAttack == 0 || iDecay == 0 igoto static
+if iAttack == 0 || iDecay == 0 kgoto static
+
+aEnvelope subinstr "envelope", kEnvelope, 1/iAttack, iEnvelope * iEnvelopeAttack, 1/iDecay, iEnvelope * iSustain
+
+kEnvelope = k ( aEnvelope )
+
+igoto out
+kgoto out
+
+static:
+
+aEnvelope init iEnvelope
+kEnvelope init iEnvelope
+
+out:
+
+xout aEnvelope, kEnvelope
+
+endop
+
+opcode oWave, i, ii
+
+iWave, iFrequency xin
+
+if iWave == -1 then
+
+iWaveFT = -1
+
+else
+
+iWaveFT vco2ift iFrequency, iWave
+
+endif
+
+xout iWaveFT
+
+endop
+
 giNextFT vco2init 31, 100
 
 massign 0, 0
@@ -99,9 +148,6 @@ elseif iStatus == 144 then ; Note On
 
 iFrequency cpstuni iData1, iMaqam
 
-print iData1
-print iFrequency
-
 schedule iInstrument, 0, -1, iStatus, iData1, iData2, iFrequency
 
 iNote += 1
@@ -118,8 +164,6 @@ SMaqam strget p4
 
 iFT ftgen 0, 0, 64, -2, 12, 2, cpsmidinn ( 60 ), 60, p5, 0, p6, 0, p7, p8, 0, p9, 0, p10, 0, p11
 
-print iFT
-
 SFT strcat "maqam/", SMaqam
 
 chnset iFT, SFT
@@ -134,50 +178,45 @@ iDecay oGet "decay"
 iAmplitude init p6 / 127
 iAmplitudeSustain oGet "amplitudeSustain"
 
-tigoto amplitudeEnvelope
-
-kAmplitude init 0
-
-amplitudeEnvelope:
-
-aAmplitude subinstr "envelope", kAmplitude, 1/iAttack, iAmplitude, 1/iDecay, iAmplitude * iAmplitudeSustain
-
-kAmplitude = k ( aAmplitude )
-
-tigoto frequencyEnvelope
-
-iFrequencyInitial = 0
-kFrequency init 0
-
-frequencyEnvelope:
+aAmplitude, kAmplitude oEnvelope iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
 
 iFrequencyDetune oGet "frequencyDetune"
-
 iFrequency = p7 * cent ( iFrequencyDetune )
 iFrequencyAttack oGet "frequencyAttack"
 
-if iFrequencyInitial == 0 then
+aFrequency, kFrequency oEnvelope iFrequency, iAttack, iFrequencyAttack, iDecay, 1
 
-kFrequency init iFrequency
-iFrequencyInitial = iFrequency
+AM:
 
-endif
+iAMWave oGet "AMWave"
+iAMWaveFT oWave iAMWave, iFrequency
+iAMFactor oGet "AMFactor"
 
-aFrequency subinstr "envelope", kFrequency, 1/iAttack, iFrequency * cent ( iFrequencyAttack ), 1/iDecay, iFrequency
+if iAMFactor == 0 kgoto FM
 
-kFrequency = k ( aFrequency )
+aAM poscil aAmplitude, aFrequency * cent ( iAMFactor * 1200 ), iAMWaveFT, -1
+
+aAmplitude = aAM
+
+FM:
+
+iFMWave oGet "FMWave"
+iFMWaveFT oWave iFMWave, iFrequency
+iFMFactor oGet "FMFactor"
+
+if iFMFactor == 0 kgoto oscillate
+
+aFM poscil aFrequency, aFrequency * cent ( iFMFactor * 1200 ), iFMWaveFT, -1
+
+aFrequency = aFM
+
+oscillate:
 
 iWave oGet "wave"
+iWaveFT oWave iWave, iFrequency
 
-if iWave == -1 then
-
-iWaveFT = -1
-
-else
-
-iWaveFT vco2ift iFrequency, iWave
-
-endif
+print iFrequency
+print iAmplitude
 
 aNote poscil aAmplitude, aFrequency, iWaveFT, -1
 
@@ -185,15 +224,34 @@ chnmix aNote, "note"
 
 endin
 
-/*
 instr noise
 
-aNoise noise 1, kFilterEnvelope
+iAttack oGet "attack"
+iDecay oGet "decay"
 
-out aNoise * aAmplitudeEnvelope
+iAmplitude init p6 / 127
+iAmplitudeSustain oGet "amplitudeSustain"
+
+aAmplitude, kAmplitude oEnvelope iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
+
+aNoise rand aAmplitude
+
+iFrequency = p7
+iFrequencyAttack oGet "frequencyAttack"
+
+aFrequency, kFrequency oEnvelope iFrequency, iAttack, iFrequencyAttack, iDecay, 1
+
+aBandWidth init 1000
+
+aFiltered areson aNoise, aFrequency, aBandWidth
+
+aWave poscil aAmplitude, aFrequency
+
+aNote balance aFiltered, aWave
+
+chnmix aNote, "note"
 
 endin
-*/
 
 instr envelope
 

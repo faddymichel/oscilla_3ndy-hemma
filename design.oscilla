@@ -1,22 +1,30 @@
 > design
 
-+ oscillator
++ oscillator fm
 
 wave -1
-frequencyAttack 25
+frequencyAttack 1
+
+FMFactor 1
+FMWave -1
+
+AMFactor 0
+AMWave -1
 
 on
 
-attack 32
-decay 64
-amplitudeSustain .125
+attack 512
+decay 128
+
+amplitudeSustain 0.125
+frequencyAttack 2
 
 off
 
-attack 8
+attack 2
+
 decay 1
 amplitudeSustain 0
-frequencyAttack -25
 
 > tuning
 
@@ -27,7 +35,7 @@ keyboard s d f j k l ;
 > score
 
 maqam hijaz
-tempo 90
-octave 5
+tempo 100
+octave 3
 
-s d f j k l ; ; l k j f d s
+s f/2

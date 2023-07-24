@@ -7,7 +7,7 @@ export default class Score extends Mode {
 $maqam ( play, name ) {
 
 return this .oscilla ( $ ( 'kit' ) )
-. map ( instrument => `i ${ instrument } 0 -1 192 "${ name }"` )
+. map ( instrument => `i ${ instrument .instance } 0 -1 192 "${ name }"` )
 .join ( '\n' );
 
 }
@@ -16,7 +16,7 @@ time = 0
 velocity = 53
 octave = 5
 
-$octave ( play, level ) { this .octave = level }
+$octave ( play, level ) { this .octave = parseInt ( level ) }
 
 $tempo ( play, bpm ) {
 
@@ -34,32 +34,21 @@ return [
 
 ... notation .map ( note => {
 
-let key, duration;
+let octave = 0;
 
-switch ( note .length ) {
+if ( [ '-', '+' ] .includes ( note [ 0 ] ) ) {
 
-case 1:
-
-duration = 1;
-[ key ] = note;
-
-break;
-
-case 2:
-
-[ duration, key ] = note;
-
-break;
-
-default:
-
-throw '#error Invalid note syntax';
+octave += parseInt ( note .slice ( 0, 2 ) );
+note = note .slice ( 2 );
 
 }
 
+console .log ( typeof score .octave, typeof octave );
+
+let [ key, duration ] = note .split ( '/' );
 const number = oscilla ( $ ( 'noteNumber' ), key );
 
-return score .note ( parseInt ( duration ), number + octave * 12, velocity );
+return score .note ( 1 / parseInt ( duration || 1 ), number + ( score .octave + octave ) * 12 );
 
 } ),
 this .time ? `i "out" 0 ${ this .time }` : undefined
@@ -68,18 +57,42 @@ this .time ? `i "out" 0 ${ this .time }` : undefined
 
 }
 
-note ( duration, number, velocity ) {
+note ( duration, number ) {
 
 const score = this;
 const on = score .time;
 const off = score .time = on + duration;
 
 return score .oscilla ( $ ( 'kit' ) )
-. map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ velocity })
-i ${ instrument } ${ on } -1 144 ${ number } ${ velocity } 0
-i ${ instrument } ${ off } -1 128 ${ number } 0 0` )
+. map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ instrument .velocity || score .velocity })
+i ${ instrument .instance } ${ on } -1 144 ${ number } ${ instrument .velocity || score .velocity } 0
+i ${ instrument .instance } ${ off } -1 128 ${ number } 0 0` )
 .join ( '\n' );
 
+}
+
+$velocity ( play, value, instrument ) {
+
+const score = this;
+const { oscilla } = score;
+const kit = oscilla ( $ ( 'kit' ) );
+
+( instrument ?.length ? kit .equipment .get ( instrument ) : score ) .velocity = value;
+
+}
+
+$repeat ( play, times, ... notation ) {
+
+times = parseInt ( times );
+
+let score = `; Repeating this part for ${ times } times\n`;
+
+for ( let repeats = 0; repeats < times; repeats++ )
+score += `; Repeat #${ repeats + 1 }
+${ play ( ... notation ) }
+`;
+
+return score += "; Finished repeating";
 }
 
 };

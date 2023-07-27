@@ -2,6 +2,7 @@
 
 <CsOptions>
 
+-Lstdin
 -odac
 -Ma
 
@@ -18,8 +19,12 @@ opcode oGet, i, S
 
 SName xin
 
+print p1
+print p4
 SControl sprintf "%f/%d/%s", p1, p4, SName
 iValue chnget SControl
+
+prints "%s: %f\n", SControl, iValue
 
 xout iValue
 
@@ -37,30 +42,35 @@ xout iFT
 
 endop
 
-opcode oEnvelope, ak, iiiii
+opcode oEnvelope, ak, Siiiiio
 
-iEnvelope, iAttack, iEnvelopeAttack, iDecay, iSustain xin
+SName, iTarget, iAttack, iEnvelopeAttack, iDecay, iSustain, iInitialize xin
 
-tigoto Envelope
+SEnvelope sprintf "%f/%s", p1, SName
+iEnvelope chnget SEnvelope
 
-kEnvelope init 0
+; prints "%s: %f\n", SName, iEnvelope
 
-Envelope:
+if iEnvelope == 0 && iInitialize != 0 then
+
+iEnvelope = iTarget
+
+endif
 
 if iAttack == 0 || iDecay == 0 igoto static
 if iAttack == 0 || iDecay == 0 kgoto static
 
-aEnvelope subinstr "envelope", kEnvelope, 1/iAttack, iEnvelope * iEnvelopeAttack, 1/iDecay, iEnvelope * iSustain
+aEnvelope linseg iEnvelope, 1/iAttack, iTarget * iEnvelopeAttack, 1/iDecay, iTarget * iSustain
 
-kEnvelope = k ( aEnvelope )
+chnset k ( aEnvelope ), SEnvelope
 
 igoto out
 kgoto out
 
 static:
 
-aEnvelope init iEnvelope
-kEnvelope init iEnvelope
+aEnvelope init iTarget
+kEnvelope init iTarget
 
 out:
 
@@ -83,6 +93,36 @@ iWaveFT vco2ift iFrequency, iWave
 endif
 
 xout iWaveFT
+
+endop
+
+opcode oModulate, a, Saai
+
+SModulator, aParameter, aFrequency, iFrequency xin
+
+iModulator oGet SModulator
+
+if iModulator <= 0 kgoto static
+
+SWave strcat SModulator, "/wave"
+iWave oGet SWave
+iWaveFT oWave iWave, iFrequency
+
+SDetune strcat SModulator, "/detune"
+iDetune oGet SDetune
+
+aModulator poscil aParameter, aFrequency * cent ( iDetune * 100 ), iWaveFT, -1
+
+igoto out
+kgoto out
+
+static:
+
+aModulator = aParameter
+
+out:
+
+xout aModulator
 
 endop
 
@@ -175,48 +215,26 @@ instr oscillator
 iAttack oGet "attack"
 iDecay oGet "decay"
 
+print iAttack
+
 iAmplitude init p6 / 127
 iAmplitudeSustain oGet "amplitudeSustain"
 
-aAmplitude, kAmplitude oEnvelope iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
+aAmplitude, kAmplitude oEnvelope "amplitude", iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
 
 iFrequencyDetune oGet "frequencyDetune"
-iFrequency = p7 * cent ( iFrequencyDetune )
+iFrequency = p7 * cent ( iFrequencyDetune * 100 )
 iFrequencyAttack oGet "frequencyAttack"
+iFrequencyAttack = cent ( iFrequencyAttack * 100 )
 
-aFrequency, kFrequency oEnvelope iFrequency, iAttack, iFrequencyAttack, iDecay, 1
+aFrequency, kFrequency oEnvelope "frequency", iFrequency, iAttack, iFrequencyAttack, iDecay, 1, 1
 
-AM:
+aAmplitude oModulate "AM", aAmplitude, aFrequency, iFrequency
 
-iAMWave oGet "AMWave"
-iAMWaveFT oWave iAMWave, iFrequency
-iAMFactor oGet "AMFactor"
-
-if iAMFactor == 0 kgoto FM
-
-aAM poscil aAmplitude, aFrequency * cent ( iAMFactor * 1200 ), iAMWaveFT, -1
-
-aAmplitude = aAM
-
-FM:
-
-iFMWave oGet "FMWave"
-iFMWaveFT oWave iFMWave, iFrequency
-iFMFactor oGet "FMFactor"
-
-if iFMFactor == 0 kgoto oscillate
-
-aFM poscil aFrequency, aFrequency * cent ( iFMFactor * 1200 ), iFMWaveFT, -1
-
-aFrequency = aFM
-
-oscillate:
+aFrequency oModulate "FM", aFrequency, aFrequency, iFrequency
 
 iWave oGet "wave"
 iWaveFT oWave iWave, iFrequency
-
-print iFrequency
-print iAmplitude
 
 aNote poscil aAmplitude, aFrequency, iWaveFT, -1
 
@@ -232,14 +250,14 @@ iDecay oGet "decay"
 iAmplitude init p6 / 127
 iAmplitudeSustain oGet "amplitudeSustain"
 
-aAmplitude, kAmplitude oEnvelope iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
+aAmplitude, kAmplitude oEnvelope "amplitude", iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
 
 aNoise rand aAmplitude
 
 iFrequency = p7
 iFrequencyAttack oGet "frequencyAttack"
 
-aFrequency, kFrequency oEnvelope iFrequency, iAttack, iFrequencyAttack, iDecay, 1
+aFrequency, kFrequency oEnvelope "frequency", iFrequency, iAttack, iFrequencyAttack, iDecay, 1
 
 aBandWidth init 1000
 
@@ -276,35 +294,50 @@ endin
 
 instr out
 
+schedule "lastCycle", 0, p3
+schedule "monitorRelease", 0, -1
+
+p3 += 36000
+
 aNote chnget "note"
 
 aNote clip aNote, 1, 1
 
-kReleased lastcycle
-
-if kReleased == 1 then
-
-p3 += 1
-
-kNote = k ( aNote )
-
-if kNote == 0 then
-
-turnoff
-
-endif
-
-endif
-
 out aNote
+
+chnset k ( aNote ), "kNote"
 
 chnclear "note"
 
 endin
 
-instr keyboard
+gkReleased init -1
 
-kCharacter, kDown sense
+instr lastCycle
+
+gkReleased lastcycle
+
+endin
+
+instr monitorRelease
+
+if gkReleased == 1 then
+
+kNote chnget "kNote"
+
+if kNote <= 0 then
+
+schedulek "exit", 0, 0, 0
+
+endif
+
+endif
+
+endin
+
+instr exit
+
+exitnow p4
 
 endin
 

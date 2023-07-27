@@ -1,41 +1,113 @@
 > design
 
+kit pluck
+
 + oscillator fm
 
 wave -1
-frequencyAttack 1
+frequencyDetune 0
 
-FMFactor 1
-FMWave -1
+FM 1
+FM/wave -1
+FM/detune 12
 
-AMFactor 0
-AMWave -1
+AM 1
+AM/wave -1
+
+on
+
+attack 256
+decay 12
+
+frequencyAttack .25
+
+kit kick
+
++ oscillator mono
+
+wave 4
+
+on
+
+attack 512
+decay 16
+
+amplitudeSustain .375
+
+frequencyAttack 12
+
+off
+
+attack 512
+decay 512
+
+amplitudeSustain 0
+
++ noise snatch
+
+on
+
+attack 512
+decay 512
+
+frequencyAttack 12
+
+kit snare
+
++ oscillator mono
+
+wave 4
+
+on
+
+attack 512
+decay 64
+
+frequencyAttack 18
+
++ noise snatch
 
 on
 
 attack 512
 decay 128
 
-amplitudeSustain 0.125
-frequencyAttack 2
-
-off
-
-attack 2
-
-decay 1
-amplitudeSustain 0
+frequencyAttack 1
 
 > tuning
 
-maqam hijaz 0 0 -2 0 0 -2 0
+maqam hijaz 0 1 -1 1 1 -1 1
 
 keyboard s d f j k l ;
 
 > score
 
-maqam hijaz
-tempo 100
-octave 3
+kit kick
 
-s f/2
+maqam hijaz
+tempo 120
+octave 3
+velocity 100 mono
+velocity 25 snatch
+
+repeat 24 s/2 _/2 _ s/2 _/2 _
+
+kit snare
+
+time 0
+maqam hijaz
+octave 4
+velocity 200
+velocity 75 snatch
+
+repeat 24 _/2 j/2 _/2 j/2 _ j
+
+kit pluck
+maqam hijaz
+time 0
+octave 5
+velocity 150
+
+repeat 4 _/2 s/4 s/4 j/2 d/2 f/2 _/2 +1f/2 _ s/4 s/4 -1;/2 -1l/2 -1k/2 _/2 k/2 _ s/4 s/4 j/2 d/2 f/2 _/2 +1f/2 _ s/4 s/4 -1;/2 s/2 d/2 _/2 +1d/2 _ d/4 d/4 j/2 d/2 f/2 d/2 s/2 _ s/4 -1;/4 -1l/2 -1k/2 -1k/2 _ _/2
+
+out

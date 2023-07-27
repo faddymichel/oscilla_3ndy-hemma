@@ -4,6 +4,8 @@ const $ = Symbol .for;
 
 export default class Design extends Mode {
 
+$kit ( play, name ) { this .oscilla ( $ ( 'kit' ), name ) }
+
 $on () { this .status = 144 }
 $off () { this .status = 128 }
 

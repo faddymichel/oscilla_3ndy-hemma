@@ -6,13 +6,24 @@ export default class Score extends Mode {
 
 $maqam ( play, name ) {
 
-return this .oscilla ( $ ( 'kit' ) )
+return this .oscilla ( $ ( 'getKit' ) )
 . map ( instrument => `i ${ instrument .instance } 0 -1 192 "${ name }"` )
 .join ( '\n' );
 
 }
 
+$kit ( play, name ) {
+
+this .oscilla ( $ ( 'setKit' ), name );
+
+return `; Kit (${ name }) is currently in use`;
+
+}
+
 time = 0
+
+$time ( play, value ) { this .time = parseInt ( value ) }
+
 velocity = 53
 octave = 5
 
@@ -28,11 +39,9 @@ t 0 ${ bpm }`;
 $_director ( play, ... notation ) {
 
 const score = this;
-const { oscilla, octave, velocity } = score;
+const { oscilla, velocity } = score;
 
-return [
-
-... notation .map ( note => {
+return notation .map ( note => {
 
 let octave = 0;
 
@@ -43,17 +52,29 @@ note = note .slice ( 2 );
 
 }
 
-console .log ( typeof score .octave, typeof octave );
-
 let [ key, duration ] = note .split ( '/' );
-const number = oscilla ( $ ( 'noteNumber' ), key );
+const number = oscilla ( $ ( 'noteNumber' ), key ) + ( score .octave + octave ) * 12;
 
-return score .note ( 1 / parseInt ( duration || 1 ), number + ( score .octave + octave ) * 12 );
+duration = 1 / parseInt ( duration || 1 );
 
-} ),
-this .time ? `i "out" 0 ${ this .time }` : undefined
+if ( isNaN ( number ) ) {
 
-] .join ( '\n' );
+score .time += duration;
+
+return `; Rest for ${ duration } beats`;
+
+}
+
+const on = score .time;
+const off = score .time = on + duration;
+
+return score .oscilla ( $ ( 'getKit' ) )
+. map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ instrument .velocity || score .velocity })
+i ${ instrument .instance } ${ on } -1 144 ${ number } ${ instrument .velocity || score .velocity } 0
+i ${ instrument .instance } ${ off } -1 128 ${ number } 0 0` )
+.join ( '\n' );
+
+} ) .join ( '\n' );
 
 }
 
@@ -63,7 +84,7 @@ const score = this;
 const on = score .time;
 const off = score .time = on + duration;
 
-return score .oscilla ( $ ( 'kit' ) )
+return score .oscilla ( $ ( 'getKit' ) )
 . map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ instrument .velocity || score .velocity })
 i ${ instrument .instance } ${ on } -1 144 ${ number } ${ instrument .velocity || score .velocity } 0
 i ${ instrument .instance } ${ off } -1 128 ${ number } 0 0` )
@@ -75,7 +96,7 @@ $velocity ( play, value, instrument ) {
 
 const score = this;
 const { oscilla } = score;
-const kit = oscilla ( $ ( 'kit' ) );
+const kit = oscilla ( $ ( 'getKit' ) );
 
 ( instrument ?.length ? kit .equipment .get ( instrument ) : score ) .velocity = value;
 
@@ -93,6 +114,12 @@ ${ play ( ... notation ) }
 `;
 
 return score += "; Finished repeating";
+}
+
+$out () {
+
+return this .time ? `i "out" 0 ${ this .time }` : undefined;
+
 }
 
 };

@@ -33,7 +33,8 @@ return `s ; #mode ${ mode }`;
 
 }
 
-room = new Map
+
+studio = new Map
 
 $_kit ( play, name ) {
 
@@ -41,21 +42,36 @@ this .kit = [];
 this .kit .equipment = new Map;
 
 if ( name ?.length )
-this .room .set ( name, this .kit );
+this .studio .set ( name, this .kit );
+
+}
+
+output = new Map
+
+$_output () {
+
+const output = [];
+
+this .output .forEach ( channel => output .push ( `i "channel" 0 -1 ${ channel }` ) );
+
+return output;
 
 }
 
 instance = 0
 
-$_instrument ( play, name ) {
+$_instrument ( play, name, channel ) {
 
-const { kit } = this;
-const instrument = { instance: 13 + ( ++this .instance ) % 1000 / 1000 };
+const { output, kit } = this;
+const instrument = { instance: 13 + ( ++this .instance ) % 1000000 / 1000000 };
 
 kit .push ( instrument );
 
 if ( name ?.length )
 kit .equipment .set ( name, instrument );
+
+if ( channel .length )
+instrument .channel = output .get ( channel ) || output .set ( channel, output .size + 1 ) .get ( channel );
 
 return instrument;
 
@@ -63,7 +79,7 @@ return instrument;
 
 $_setKit ( play, name ) { 
 
-this .kit = this .room .get ( name ) }
+this .kit = this .studio .get ( name ) }
 
 $_getKit () { return this .kit }
 

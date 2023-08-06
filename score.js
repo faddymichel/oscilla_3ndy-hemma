@@ -118,7 +118,12 @@ return score += "; Finished repeating";
 
 $out () {
 
-return this .time ? `i "out" 0 ${ this .time }` : undefined;
+return this .time ? [
+
+... this .oscilla ( $ ( 'output' ) ),
+`i "out" 0 ${ this .time }`
+
+] .join ( '\n' ) : undefined;
 
 }
 

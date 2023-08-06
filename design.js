@@ -9,15 +9,24 @@ $kit ( play, name ) { this .oscilla ( $ ( 'kit' ), name ) }
 $on () { this .status = 144 }
 $off () { this .status = 128 }
 
-[ '$+' ] ( play, type = 'oscillator', name ) {
+unison = 1
+
+$unison ( play, partials ) { this .unison = parseInt ( partials ) || 1 }
+
+[ '$+' ] ( play, type = 'oscillator', name, channel ) {
 
 const design = this;
-const { oscilla } = design;
-const instrument = design .instrument = oscilla ( $ ( 'instrument' ), name );
+const { oscilla, unison } = design;
+const instrument = design .instrument = [];
+
+for ( let partial = 0; partial < unison; partial++ )
+instrument [ partial ] = oscilla ( $ ( 'instrument' ), name, channel );
 
 delete design .status;
 
-return `i ${ instrument .instance } 0 -1 "${ type }" 0 0 0`;
+design .unison = 1
+
+return instrument .map ( ( instrument, partial ) => `i ${ instrument .instance } 0 -1 "${ type }" ${ instrument .channel } ${ partial } 0` ) .join ( '\n' );
 
 }
 
@@ -32,8 +41,9 @@ const { instrument, status } = this;
 if ( parameter === undefined || value === undefined )
 throw "#error #design Neither the parameter nor value can be undefined."
 
-return [ ... status ? [ status ] : [ 144, 128 ] ]
+return instrument .map ( instrument => [ ... status ? [ status ] : [ 144, 128 ] ]
 .map ( status => `i ${ instrument .instance } 0 -1 176 ${ status } "${ parameter }" ${ value }` )
+.join ( '\n' ) )
 .join ( '\n' );
 
 }

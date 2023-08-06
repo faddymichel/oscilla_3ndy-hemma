@@ -1,0 +1,183 @@
+> design
+
+kit pluck
+
++ oscillator fm
+
+wave -1
+
+frequencyDetune .1
+
+FM 1
+FM/wave -1
+FM/detune 12
+
+AM 1
+AM/wave -1
+AM/detune 0
+
+lowpass -1
+lowpass/layers 1
+
+on
+
+attack 128
+decay 16
+
+frequencyAttack 1
+
++ oscillator mono
+
+wave 3
+
+frequencyDetune 12
+
+lowpass 1
+lowpass/layers 4
+
+on
+
+attack 128
+decay 16
+
+amplitudeAttack 2.5
+
+frequencyAttack 1
+
++ noise wind/noise
+
+on
+
+attack 128
+decay 16
+
++ filter filter wind
+
+on
+
+attack 128
+decay 16
+
+kit dom
+
++ oscillator mainsub
+
+wave 4
+
+frequencyDetune 24
+
+lowpass 1
+lowpass/detune 0
+lowpass/layers 1
+
+on
+
+attack 128
+decay 16
+
+amplitudeSustain .75
+
+frequencySustain -24
+
+off
+
+attack 16
+decay 512
+
+frequencyAttack -24
+
++ oscillator highkick
+
+wave -1
+
+frequencyDetune 36
+
+on
+
+attack 128
+decay 32
+
+frequencySustain -12
+
+frequencyAttack -12
++ noise click
+
+frequencyDetune 48
+
+bandwidth 500
+
+on
+
+attack 128
+decay 64
+
+frequencySustain -24
+
+bandwidthSustain 0
+
+kit tak
+
++ oscillator pop
+
+wave -1
+
+lowpass 1
+
+on
+
+attack 128
+decay 32
+
+frequencySustain -24
+
++ noise clickNoise click
+
+on
+
+attack 128
+decay 72
+
+frequencySustain -36
+
+> tuning
+
+maqam faddy 0 1 -1 1 1 -1 1
+
+keyboard s d f j k l ;
+
+> score
+
+kit dom
+
+time 1000
+maqam faddy
+tempo 120
+octave 3
+velocity 100 mainsub
+velocity 50 click
+velocity 100 highkick
+
+repeat 24 s/2 _/2 _ s/2 _/2 _
+
+kit tak
+
+maqam faddy
+octave 5
+velocity 1 pop
+velocity 75 clickNoise
+time 0
+
+repeat 24 _/2 d/2 _/2 d/2 _ d/2 _/2
+
+kit pluck
+
+maqam faddy
+time 1000
+octave 6
+velocity 00 mono
+velocity 100 fm
+velocity 100 filter
+
+repeat 4 _/2 s/4 s/4 j/2 d/2 f/2 _/2 +1f/2 _ s/4 s/4 -1;/2 -1l/2 -1k/2 _/2 k/2 _ s/4 s/4 j/2 d/2 f/2 _/2 +1f/2 _ s/4 s/4 -1;/2 s/2 d/2 _/2 +1d/2 _ d/4 d/4 j/2 d/2 f/2 d/2 s/2 _ s/4 -1;/4 -1l/2 -1k/2 -1k/2 _ _/2
+
+out

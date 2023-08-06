@@ -12,21 +12,65 @@
 
 sr = 44100
 ksmps = 32
-nchnls = 1
+nchnls = 2
 0dbfs = 1
 
-opcode oGet, i, S
+opcode oGet, i, So
 
-SName xin
+SName, iDefault xin
 
-print p1
-print p4
 SControl sprintf "%f/%d/%s", p1, p4, SName
 iValue chnget SControl
 
-prints "%s: %f\n", SControl, iValue
+if iValue == 0 then
+
+iValue = iDefault
+
+endif
 
 xout iValue
+
+endop
+
+opcode oMix, 0, aao
+
+aNoteLeft, aNoteRight, iClear xin
+
+if p8 == 0 then
+
+SChannel = "note"
+
+else
+
+SChannel sprintf "channel/%d", p8
+
+endif
+
+SChannelLeft strcat SChannel, "/left"
+SChannelRight strcat SChannel, "/right"
+
+if k ( iClear ) == 1 then
+
+chnclear SChannelLeft
+chnclear SChannelRight
+
+endif
+
+chnmix aNoteLeft, SChannelLeft
+chnmix aNoteRight, SChannelRight
+
+endop
+
+opcode oChannel, aa, 0
+
+SChannel sprintf "channel/%d", p8
+SChannelLeft strcat SChannel, "/left"
+SChannelRight strcat SChannel, "/right"
+
+aNoteLeft chnget SChannelLeft
+aNoteRight chnget SChannelRight
+
+xout aNoteLeft, aNoteRight
 
 endop
 
@@ -48,8 +92,6 @@ SName, iTarget, iAttack, iEnvelopeAttack, iDecay, iSustain, iInitialize xin
 
 SEnvelope sprintf "%f/%s", p1, SName
 iEnvelope chnget SEnvelope
-
-; prints "%s: %f\n", SName, iEnvelope
 
 if iEnvelope == 0 && iInitialize != 0 then
 
@@ -75,6 +117,43 @@ kEnvelope init iTarget
 out:
 
 xout aEnvelope, kEnvelope
+
+endop
+
+opcode oAmplitude, aki, 0
+
+iAttack oGet "attack"
+iDecay oGet "decay"
+
+iAmplitude init p6 / 127
+iAmplitudeAttack oGet "amplitudeAttack", 1
+iAmplitudeSustain oGet "amplitudeSustain"
+
+aAmplitude, kAmplitude oEnvelope "amplitude", iAmplitude, iAttack, iAmplitudeAttack, iDecay, iAmplitudeSustain
+
+xout aAmplitude, kAmplitude, iAmplitude
+
+endop
+
+opcode oFrequency, aki, 0
+
+iFrequencyDetune oGet "frequencyDetune"
+iUnisonDetune oGet "unisonDetune"
+
+iFrequency = p7 * cent ( iFrequencyDetune * 100 ) * cent ( p9 * iUnisonDetune * 100 )
+
+iFrequencyAttack oGet "frequencyAttack"
+iFrequencyAttack = cent ( iFrequencyAttack * 100 )
+
+iFrequencySustain oGet "frequencySustain"
+iFrequencySustain = cent ( iFrequencySustain * 100 )
+
+iAttack oGet "attack"
+iDecay oGet "decay"
+
+aFrequency, kFrequency oEnvelope "frequency", iFrequency, iAttack, iFrequencyAttack, iDecay, iFrequencySustain, 1
+
+xout aFrequency, kFrequency, iFrequency
 
 endop
 
@@ -126,6 +205,44 @@ xout aModulator
 
 endop
 
+opcode oLowpass, a, aa
+
+aNote, aFrequency xin
+
+tigoto lowpass
+
+iSkip = 0
+
+lowpass:
+
+iLowpass oGet "lowpass"
+iLowpassDetune oGet "lowpass/detune"
+iLowpassLayers oGet "lowpass/layers", 1
+
+if iLowpass <= 0 kgoto highpass
+
+aNote tonex aNote, aFrequency * cent ( iLowpassDetune * 100 ), iLowpassLayers, iSkip
+
+highpass:
+
+iHighpass oGet "highpass"
+iHighpassDetune oGet "highpass/detune"
+iHighpassLayers oGet "highpass/layers", 1
+
+if iHighpass <= 0 kgoto out
+
+aNote atonex aNote, aFrequency * cent ( iHighpassDetune * 100 ), iHighpassLayers, iSkip
+
+out:
+
+iSkip += -1
+
+aFiltered = aNote
+
+xout aNote
+
+endop
+
 giNextFT vco2init 31, 100
 
 massign 0, 0
@@ -137,6 +254,18 @@ tigoto control
 SInstrument strget p4
 iInstrument nstrnum SInstrument
 iInstrument += frac ( p1 )
+
+iChannel = p5
+iPartial = p6
+
+if iChannel >= 1 then
+
+iChannelInstrument nstrnum "channel"
+iChannelInstrument += frac ( iChannel / 1000000 )
+
+schedule iChannelInstrument, 0, -1, iChannel
+
+endif
 
 iMaqam = 0
 
@@ -157,6 +286,8 @@ if iStatus == 192 then ; Program Change
 SMaqam strget iData1
 iMaqam oMaqam SMaqam
 
+prints "#oscilla #tuning #maqam %d %s\n", iMaqam, SMaqam
+
 elseif iStatus == 176 then ; Control Change
 
 iStatus = p5
@@ -165,7 +296,7 @@ SControl sprintf "%f/%d/%s", iInstrument, iStatus, SControlName
 
 chnset p7, SControl
 
-prints "#oscilla #parameter %s = %d\n", SControl, p7
+prints "#oscilla #parameter %s %d\n", SControl, p7
 
 p4 = 0
 p5 = 0
@@ -180,15 +311,20 @@ if iNote == 0 then
 
 iFrequency cpstuni iData1, iMaqam
 
-schedule iInstrument, 0, -1, iStatus, iData1, iData2, iFrequency
+prints "#oscilla #noteOff %d %d %d %d %d\n", iStatus, iData1, iData2, iFrequency, iChannel
+
+schedule iInstrument, 0, -1, iStatus, iData1, iData2, iFrequency, iChannel, iPartial
 
 endif
 
 elseif iStatus == 144 then ; Note On
 
+prints "#oscilla %s %f\n", SInstrument, iInstrument
 iFrequency cpstuni iData1, iMaqam
 
-schedule iInstrument, 0, -1, iStatus, iData1, iData2, iFrequency
+prints "#oscilla #noteOn %d %d %d %d %d\n", iStatus, iData1, iData2, iFrequency, iChannel
+
+schedule iInstrument, 0, -1, iStatus, iData1, iData2, iFrequency, iChannel, iPartial
 
 iNote += 1
 
@@ -210,24 +346,15 @@ chnset iFT, SFT
 
 endin
 
+#define p #iP [] fillarray p4, p5, p6, p7, p8, p9#
+
 instr oscillator
 
-iAttack oGet "attack"
-iDecay oGet "decay"
+$p
 
-print iAttack
+aAmplitude, kAmplitude, iAmplitude oAmplitude
 
-iAmplitude init p6 / 127
-iAmplitudeSustain oGet "amplitudeSustain"
-
-aAmplitude, kAmplitude oEnvelope "amplitude", iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
-
-iFrequencyDetune oGet "frequencyDetune"
-iFrequency = p7 * cent ( iFrequencyDetune * 100 )
-iFrequencyAttack oGet "frequencyAttack"
-iFrequencyAttack = cent ( iFrequencyAttack * 100 )
-
-aFrequency, kFrequency oEnvelope "frequency", iFrequency, iAttack, iFrequencyAttack, iDecay, 1, 1
+aFrequency, kFrequency, iFrequency oFrequency
 
 aAmplitude oModulate "AM", aAmplitude, aFrequency, iFrequency
 
@@ -238,57 +365,121 @@ iWaveFT oWave iWave, iFrequency
 
 aNote poscil aAmplitude, aFrequency, iWaveFT, -1
 
-chnmix aNote, "note"
+oMix aNote, aNote
 
 endin
 
 instr noise
 
-iAttack oGet "attack"
-iDecay oGet "decay"
+$p
 
-iAmplitude init p6 / 127
-iAmplitudeSustain oGet "amplitudeSustain"
-
-aAmplitude, kAmplitude oEnvelope "amplitude", iAmplitude, iAttack, 1, iDecay, iAmplitudeSustain
+aAmplitude, kAmplitude, iAmplitude oAmplitude
 
 aNoise rand aAmplitude
 
-iFrequency = p7
-iFrequencyAttack oGet "frequencyAttack"
-
-aFrequency, kFrequency oEnvelope "frequency", iFrequency, iAttack, iFrequencyAttack, iDecay, 1
-
-aBandWidth init 1000
-
-aFiltered areson aNoise, aFrequency, aBandWidth
-
-aWave poscil aAmplitude, aFrequency
-
-aNote balance aFiltered, aWave
-
-chnmix aNote, "note"
+oMix aNoise, aNoise
 
 endin
 
-instr envelope
+instr filter
 
-aEnvelope linsegr p4, p5, p6, p7, p8, 1, 0
+tigoto filter
 
-out aEnvelope
+iSkip = 0
+
+filter:
+
+$p
+
+aNoteLeft, aNoteRight oChannel
+
+aFrequency, kFrequency, iFrequency oFrequency
+
+iAttack oGet "attack"
+iDecay oGet "decay"
+
+lowpass:
+
+iLowpass oGet "lowpass"
+iLowpassDetune oGet "lowpass/detune"
+iLowpassLayers oGet "lowpass/layers", 1
+
+if iLowpass <= 0 kgoto highpass
+
+aNoteLeft tonex aNoteLeft, aFrequency * cent ( iLowpassDetune * 100 ), iLowpassLayers, iSkip
+aNoteRight tonex aNoteRight, aFrequency * cent ( iLowpassDetune * 100 ), iLowpassLayers, iSkip
+
+highpass:
+
+iHighpass oGet "highpass"
+iHighpassDetune oGet "highpass/detune"
+iHighpassLayers oGet "highpass/layers", 1
+
+if iHighpass <= 0 kgoto out
+
+aNoteLeft atonex aNoteLeft, aFrequency * cent ( iHighpassDetune * 100 ), iHighpassLayers, iSkip
+aNoteRight atonex aNoteRight, aFrequency * cent ( iHighpassDetune * 100 ), iHighpassLayers, iSkip
+
+out:
+
+iSkip += -1
+
+oMix aNoteLeft, aNoteRight, 1
 
 endin
 
 instr reverb
 
-aNote chnget "note"
+tigoto reverb
 
-iTime oGet "time"
-iAmplitude oGet "amplitude"
+iSkip = 0
 
-aReverb reverb aNote, iTime, -1
+reverb:
 
-chnmix aReverb / iAmplitude, "note"
+$p
+
+aNoteLeft, aNoteRight oChannel
+
+iAttack oGet "attack"
+iDecay oGet "decay"
+
+iRoomSize oGet "roomSize"
+iRoomSizeAttack oGet "roomSizeAttack"
+iRoomSizeSustain oGet "roomSizeSustain"
+
+aRoomSize, kRoomSize oEnvelope "roomSize", iRoomSize, iAttack, iRoomSizeAttack, iDecay, iRoomSizeSustain
+
+kHFDamp init .75
+
+denorm aNoteLeft, aNoteRight
+
+aNoteLeft, aNoteRight freeverb aNoteLeft, aNoteRight, kRoomSize, kHFDamp, sr, iSkip
+
+iSkip += -1
+
+aAmplitude, kAmplitude, iAmplitude oAmplitude
+
+aNoteLeft = aNoteLeft * aAmplitude 
+aNoteRight = aNoteRight * aAmplitude
+
+oMix aNoteLeft, aNoteRight; , 1
+
+endin
+
+instr channel
+
+SChannel sprintf "channel/%d", p4
+SChannelLeft strcat SChannel, "/left"
+SChannelRight strcat SChannel, "/right"
+
+aNoteLeft chnget SChannelLeft
+aNoteRight chnget SChannelRight
+
+chnmix aNoteLeft, "note/left"
+chnmix aNoteRight, "note/right"
+
+chnclear SChannelLeft
+chnclear SChannelRight
 
 endin
 
@@ -299,15 +490,18 @@ schedule "monitorRelease", 0, -1
 
 p3 += 36000
 
-aNote chnget "note"
+aNoteLeft chnget "note/left"
+aNoteRight chnget "note/right"
 
-aNote clip aNote, 1, 1
+aNoteLeft clip aNoteLeft, 1, 1
+aNoteRight clip aNoteRight, 1, 1
 
-out aNote
+outs aNoteLeft, aNoteRight
 
-chnset k ( aNote ), "kNote"
+chnset k ( aNoteLeft ), "kNote"
 
-chnclear "note"
+chnclear "note/left"
+chnclear "note/right"
 
 endin
 

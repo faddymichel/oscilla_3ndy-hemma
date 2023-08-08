@@ -25,10 +25,6 @@ time = 0
 $time ( play, value ) { this .time = parseInt ( value ) }
 
 velocity = 53
-octave = 5
-
-$octave ( play, level ) { this .octave = parseInt ( level ) }
-
 $tempo ( play, bpm ) {
 
 return `; Setting tempo to ${ bpm }bpm
@@ -43,17 +39,8 @@ const { oscilla, velocity } = score;
 
 return notation .map ( note => {
 
-let octave = 0;
-
-if ( [ '-', '+' ] .includes ( note [ 0 ] ) ) {
-
-octave += parseInt ( note .slice ( 0, 2 ) );
-note = note .slice ( 2 );
-
-}
-
 let [ key, duration ] = note .split ( '/' );
-const number = oscilla ( $ ( 'noteNumber' ), key ) + ( score .octave + octave ) * 12;
+const number = oscilla ( $ ( 'noteNumber' ), key );
 
 duration = 1 / parseInt ( duration || 1 );
 

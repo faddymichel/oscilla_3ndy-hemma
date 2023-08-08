@@ -15,22 +15,28 @@ return `i "maqam" 0 0 "${ name }" ${ scale .join ( ' ' ) }`;
 
 }
 
-$keyboard ( play, ... keys ) {
+$octave ( play, octave, ... keys ) {
+
+if ( isNaN ( parseInt ( octave ) ) )
+throw `#tuning The 'octave' must be a number, found: ${ octave }.`;
+
+octave = parseInt ( octave );
 
 if ( keys .length !== 7 )
 throw `#error #tuning A Keyboard must contain 7 keys, found ${ keys .length }.`;
 
 const { oscilla } = this;
 
-return keys .map ( ( key, index ) => {
+return `; Octave ( ${ octave } )
+${ keys .map ( ( key, index ) => {
 
-let number = Tuning .step [ index ];
+let number = Tuning .step [ index ] + octave * 12;
 
 oscilla ( $ ( 'keyboard' ), key, number );
 
-return `; Key: ( ${ key } ), Number ( ${ number } )`;
+return `; Key: ( ${ key } ) Number ( ${ number } )`;
 
-} ) .join ( '\n' );
+} ) .join ( '\n' ) }`;
 
 }
 

@@ -1,0 +1,72 @@
+kit boo
+
+unison 3
+
++ oscillator sawOscillator saw
+
+wave -1
+
+unisonDetune .2
+
+frequencyDetune 0
+
+FM 1
+FM/wave -1
+FM/detune 12
+
+AM 1
+AM/wave -1
+AM/detune 0
+
+on
+
+attack 128
+decay 8
+
+frequencyAttack .75
+
+amplitudeSustain 0
+
+unison 3
+
++ filter sawFilter saw
+
+lowpass 1
+lowpass/detune 0
+lowpass/layers 1
+
+highpass -1
+highpass/detune 12
+highpass/layers 1
+
+on
+
+attack 128
+decay 16
+
++ reverb sawReverb saw
+
+roomSize 1
+
+on
+
+attack 88
+decay 4
+
+amplitudeAttack 1
+amplitudeSustain 0
+
++ filter sawFilter2 saw
+
+lowpass 1
+lowpass/detune 0
+lowpass/layers 1
+
+highpass 1
+highpass/detune 12
+highpass/layers 1
+
+on
+
+attack 128
+decay 16

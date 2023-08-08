@@ -3,7 +3,21 @@ import Scenarist from 'scenarist.dev';
 import { createReadStream, createWriteStream } from 'fs';
 import Shell from 'shell.scenarist.dev';
 
-let [ input, output ] = process .argv .slice ( 2 );
+let argv = process .argv .slice ( 2 );
+let input, output;
+
+switch ( argv .length ) {
+
+case 1: [ output ] = argv; break;
+case 2: [ input, output ] = argv; break;
+
+default:
+
+console .error ( '#error Illegal command arguments' );
+
+process .exit ( -1 );
+
+}
 
 input = 'design.oscilla';
 

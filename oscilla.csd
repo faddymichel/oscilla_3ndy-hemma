@@ -447,9 +447,9 @@ iRoomSize oGet "roomSize"
 iRoomSizeAttack oGet "roomSizeAttack"
 iRoomSizeSustain oGet "roomSizeSustain"
 
-aRoomSize, kRoomSize oEnvelope "roomSize", iRoomSize, iAttack, iRoomSizeAttack, iDecay, iRoomSizeSustain
+aRoomSize, kRoomSize oEnvelope "roomSize", iRoomSize, iAttack, iRoomSizeAttack, iDecay, iRoomSizeSustain, 1
 
-kHFDamp init .75
+kHFDamp init .9999
 
 denorm aNoteLeft, aNoteRight
 

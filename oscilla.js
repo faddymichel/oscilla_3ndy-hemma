@@ -16,7 +16,7 @@ score: new Score
 
 $_producer ( play, { stamp } ) { this .stamp = stamp }
 
-[ '$>' ] ( play, mode ) {
+[ '$>' ] ( play, mode, page ) {
 
 if ( mode === undefined )
 throw "#error No mode is specified to switch to.;";
@@ -29,7 +29,12 @@ throw `#error '${ mode }' is not an existing mode.`
 
 oscilla .$_director = setup [ mode ];
 
-return `s ; #mode ${ mode }`;
+return {
+
+page,
+script: `s ; #mode ${ mode }`
+
+};
 
 }
 

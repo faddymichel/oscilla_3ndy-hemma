@@ -21,9 +21,9 @@ process .exit ( -1 );
 
 input = 'design.oscilla';
 
+const $ = Symbol .for;
 const play = Scenarist ( new Oscilla );
-
-Shell .start ( {
+const shell = Shell .start ( {
 
 play,
 lineByLine: true,
@@ -31,3 +31,7 @@ input: createReadStream ( input, 'utf8' ),
 output: createWriteStream ( output, 'utf8' )
 
 } );
+
+await shell ( $ ( 'played' ) );
+
+shell ( $ ( 'online' ), $ ( 'end' ) );

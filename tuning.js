@@ -40,6 +40,12 @@ return `; Key: ( ${ key } ) Number ( ${ number } )`;
 
 }
 
+$rest ( play, key ) {
+
+this .oscilla ( $ ( 'keyboard' ), key, -1 );
+
+}
+
 static step = {
 
 0: 0,

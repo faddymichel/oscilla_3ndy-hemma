@@ -32,19 +32,46 @@ t 0 ${ bpm }`;
 
 }
 
-$_director ( play, ... notation ) {
+part = []
+
+$_director ( play, ... phrase ) {
+
+if ( ! phrase .length )
+return;
+
+this .part .push ( phrase );
+
+}
+
+$_part ( play ) {
+
+const { part, repeats } = this;
+const score = [];
+
+while ( this .repeats-- > 0 )
+score .push (
+
+`; Repeat #${ repeats - this .repeats }`,
+part .map ( phrase => play ( $ ( 'phrase' ), phrase ) ) .join ( '\n' )
+
+);
+
+return score .join ( '\n' );
+
+}
+
+$_phrase ( play, phrase ) { return phrase .map ( note => play ( $ ( 'note' ), note ) ) .join ( '\n' ) }
+
+$_note ( play, note ) {
 
 const score = this;
 const { oscilla, velocity } = score;
-
-return notation .map ( note => {
-
 let [ key, duration ] = note .split ( '/' );
 const number = oscilla ( $ ( 'noteNumber' ), key );
 
 duration = 1 / parseInt ( duration || 1 );
 
-if ( isNaN ( number ) ) {
+if ( number === -1 ) {
 
 score .time += duration;
 
@@ -56,26 +83,32 @@ const on = score .time;
 const off = score .time = on + duration;
 
 return score .oscilla ( $ ( 'getKit' ) )
-. map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ instrument .velocity || score .velocity })
+.map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ instrument .velocity || score .velocity })
 i ${ instrument .instance } ${ on } -1 144 ${ number } ${ instrument .velocity || score .velocity } 0
 i ${ instrument .instance } ${ off } -1 128 ${ number } 0 0` )
 .join ( '\n' );
-
-} ) .join ( '\n' );
 
 }
 
-note ( duration, number ) {
+repeats = 0;
 
-const score = this;
-const on = score .time;
-const off = score .time = on + duration;
+[ '$*' ] ( play, repeats ) {
 
-return score .oscilla ( $ ( 'getKit' ) )
-. map ( instrument => `; MIDI Note Number (${ number }) on for ${ duration } beats with Velocity (${ instrument .velocity || score .velocity })
-i ${ instrument .instance } ${ on } -1 144 ${ number } ${ instrument .velocity || score .velocity } 0
-i ${ instrument .instance } ${ off } -1 128 ${ number } 0 0` )
-.join ( '\n' );
+repeats = parseInt ( repeats )
+
+if ( isNaN ( repeats ) )
+throw `#score Invalid number of repeats, found: ${ repeats }.`;
+
+let score = play ( $ ( 'part' ) );
+
+this .part = [];
+this .repeats = repeats;
+
+if ( repeats > 0 )
+score += `; Repeating this part for ${ this .repeats = parseInt ( repeats ) } times`;
+
+if ( score ?.length )
+return score;
 
 }
 
@@ -89,28 +122,25 @@ const kit = oscilla ( $ ( 'getKit' ) );
 
 }
 
-$repeat ( play, times, ... notation ) {
+$_end ( play ) {
 
-times = parseInt ( times );
+const score = [];
+const part = play ( $ ( 'part' ) );
 
-let score = `; Repeating this part for ${ times } times\n`;
+if ( part ?.length )
+score .push ( part );
 
-for ( let repeats = 0; repeats < times; repeats++ )
-score += `; Repeat #${ repeats + 1 }
-${ play ( ... notation ) }
-`;
+if ( this .time )
+score .push (
 
-return score += "; Finished repeating";
-}
-
-$out () {
-
-return this .time ? [
-
+'; Starting audio channels and final output destination.',
 ... this .oscilla ( $ ( 'output' ) ),
-`i "out" 0 ${ this .time }`
+`i "out" 0 ${ this .time }`,
+'; Finished scoring.'
 
-] .join ( '\n' ) : undefined;
+);
+
+return score .join ( '\n' );
 
 }
 

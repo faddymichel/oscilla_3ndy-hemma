@@ -96,6 +96,6 @@ $_keyboard ( play, key, number ) { this .keyboard .set ( key, number ) }
 
 $_noteNumber ( play, key ) { return this .keyboard .get ( key ) }
 
-$forever () { return 'i "forever" 0 1' }
+[ '$//' ] () {}
 
 };
